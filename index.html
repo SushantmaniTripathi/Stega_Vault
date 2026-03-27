@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>🧬 StegoVault — Hide Secrets in Images</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<style>
+  :root {
+    --bg:#080b0f; --surface:#0e1318; --surface2:#141c24; --border:#1e2d3d;
+    --accent:#00e5ff; --accent2:#7c3aed; --green:#00ff88; --red:#ff4466;
+    --text:#e2eaf4; --muted:#5a7a96;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:0.12;pointer-events:none;z-index:0;}
+  .orb1{width:500px;height:500px;background:#00e5ff;top:-150px;left:-150px;}
+  .orb2{width:400px;height:400px;background:#7c3aed;bottom:-100px;right:-100px;}
+  .wrapper{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:40px 20px 80px;}
+
+  header{text-align:center;margin-bottom:50px;animation:fadeDown 0.8s ease both;}
+  .logo{display:inline-flex;align-items:center;gap:12px;background:linear-gradient(135deg,var(--surface),var(--surface2));border:1px solid var(--border);border-radius:50px;padding:10px 22px;margin-bottom:28px;font-family:'Space Mono',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;}
+  .logo-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite;}
+  h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;line-height:1.1;background:linear-gradient(135deg,#fff 30%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:14px;}
+  .subtitle{color:var(--muted);font-size:1rem;max-width:480px;margin:0 auto;line-height:1.6;}
+
+  .flow{display:flex;margin:40px 0 0;animation:fadeUp 0.8s 0.4s ease both;}
+  .flow-step{flex:1;text-align:center;padding:20px 10px;position:relative;}
+  .flow-step:not(:last-child)::after{content:'→';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1.2rem;}
+  .flow-icon{font-size:1.8rem;margin-bottom:8px;}
+  .flow-label{font-size:0.75rem;color:var(--muted);line-height:1.4;}
+
+  .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:6px;margin-bottom:30px;animation:fadeUp 0.8s 0.2s ease both;}
+  .tab{flex:1;padding:14px;border:none;border-radius:10px;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;justify-content:center;gap:8px;}
+  .tab.active{background:linear-gradient(135deg,var(--accent2),#4f46e5);color:#fff;box-shadow:0 4px 20px rgba(124,58,237,0.4);}
+  .tab:hover:not(.active){background:var(--surface2);color:var(--text);}
+
+  .panel{display:none;animation:fadeUp 0.4s ease both;}
+  .panel.active{display:block;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;margin-bottom:20px;transition:border-color 0.3s;}
+  .card:hover{border-color:rgba(0,229,255,0.2);}
+  .card-title{font-size:0.75rem;font-family:'Space Mono',monospace;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+  .card-title::after{content:'';flex:1;height:1px;background:var(--border);}
+
+  .upload-zone{border:2px dashed var(--border);border-radius:14px;padding:40px 20px;text-align:center;cursor:pointer;transition:all 0.3s ease;position:relative;overflow:hidden;}
+  .upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:rgba(0,229,255,0.04);}
+  .upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+  .upload-icon{font-size:2.5rem;margin-bottom:12px;display:block;}
+  .upload-label{font-size:1rem;font-weight:600;color:var(--text);margin-bottom:6px;}
+  .upload-sub{font-size:0.82rem;color:var(--muted);}
+
+  .preview-box{display:none;margin-top:16px;border-radius:12px;overflow:hidden;border:1px solid var(--border);position:relative;}
+  .preview-box img{width:100%;max-height:220px;object-fit:cover;display:block;}
+  .preview-badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--green);}
+
+  .field-label{font-size:0.82rem;font-weight:600;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;display:block;}
+  textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;color:var(--text);font-family:'Space Mono',monospace;font-size:0.88rem;resize:vertical;min-height:120px;line-height:1.6;transition:border-color 0.3s;outline:none;}
+  textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,0.08);}
+
+  .pass-wrap{position:relative;}
+  .pass-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 50px 14px 16px;color:var(--text);font-family:'Space Mono',monospace;font-size:0.9rem;outline:none;transition:border-color 0.3s;}
+  .pass-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,0.08);}
+  .toggle-pass{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:4px;transition:color 0.2s;}
+  .toggle-pass:hover{color:var(--accent);}
+  .char-count{text-align:right;font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);margin-top:6px;}
+
+  .btn{width:100%;padding:18px;border:none;border-radius:14px;font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all 0.3s ease;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:0.5px;}
+  .btn-hide{background:linear-gradient(135deg,var(--accent2),#4f46e5);color:#fff;box-shadow:0 4px 25px rgba(124,58,237,0.35);}
+  .btn-hide:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 35px rgba(124,58,237,0.5);}
+  .btn-extract{background:linear-gradient(135deg,#0891b2,var(--accent));color:#000;box-shadow:0 4px 25px rgba(0,229,255,0.25);}
+  .btn-extract:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 35px rgba(0,229,255,0.4);}
+  .btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;}
+
+  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;display:none;}
+
+  .progress-wrap{margin-top:16px;display:none;}
+  .progress-label{font-family:'Space Mono',monospace;font-size:0.75rem;color:var(--muted);margin-bottom:8px;}
+  .progress-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));border-radius:2px;width:0%;transition:width 0.3s ease;}
+
+  .result{border-radius:14px;padding:20px 24px;margin-top:20px;display:none;animation:fadeUp 0.4s ease;border:1px solid;}
+  .result.success{background:rgba(0,255,136,0.06);border-color:rgba(0,255,136,0.25);}
+  .result.error{background:rgba(255,68,102,0.06);border-color:rgba(255,68,102,0.25);}
+  .result-header{display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:10px;}
+  .result.success .result-header{color:var(--green);}
+  .result.error .result-header{color:var(--red);}
+  .result-body{font-family:'Space Mono',monospace;font-size:0.85rem;color:var(--text);line-height:1.7;}
+
+  .secret-reveal{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:14px;font-family:'Space Mono',monospace;font-size:0.9rem;color:var(--accent);line-height:1.6;word-break:break-all;white-space:pre-wrap;}
+
+  .btn-download{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:12px 24px;background:var(--green);color:#000;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;cursor:pointer;text-decoration:none;transition:all 0.3s;}
+  .btn-download:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,255,136,0.3);}
+
+  .stats{display:flex;gap:12px;margin-top:14px;flex-wrap:wrap;}
+  .stat{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--muted);}
+  .stat span{color:var(--accent);font-weight:700;}
+
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+
+  @media(max-width:600px){
+    .flow{flex-direction:column;gap:10px;}
+    .flow-step::after{display:none;}
+    .card{padding:20px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<div class="wrapper">
+  <header>
+    <div class="logo"><span class="logo-dot"></span>STEGOVAULT v2.0 · RUNS IN BROWSER</div>
+    <h1>Hide Secrets<br/>Inside Images</h1>
+    <p class="subtitle">Conceal any message inside a normal photo using AES-256 encryption + LSB steganography. 100% client-side — nothing leaves your device.</p>
+    <div class="flow">
+      <div class="flow-step"><div class="flow-icon">🖼️</div><div class="flow-label">Upload<br/>Cover Image</div></div>
+      <div class="flow-step"><div class="flow-icon">✍️</div><div class="flow-label">Type<br/>Secret Text</div></div>
+      <div class="flow-step"><div class="flow-icon">🔒</div><div class="flow-label">AES-256<br/>Encrypt</div></div>
+      <div class="flow-step"><div class="flow-icon">🧬</div><div class="flow-label">Embed in<br/>Pixels</div></div>
+      <div class="flow-step"><div class="flow-icon">⬇️</div><div class="flow-label">Download<br/>Stego Image</div></div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('hide')">🔏 Hide Secret</button>
+    <button class="tab" onclick="switchTab('extract')">🔍 Extract Secret</button>
+  </div>
+
+  <!-- HIDE PANEL -->
+  <div class="panel active" id="panel-hide">
+    <div class="card">
+      <div class="card-title">Step 1 — Cover Image</div>
+      <div class="upload-zone" id="dropzone-hide" ondragover="handleDrag(event,'hide')" ondragleave="handleDragLeave('hide')" ondrop="handleDrop(event,'hide')">
+        <input type="file" id="img-hide" accept="image/png,image/bmp" onchange="previewImage('hide')"/>
+        <span class="upload-icon">🖼️</span>
+        <div class="upload-label">Drop image here or click to browse</div>
+        <div class="upload-sub">PNG or BMP only · JPEG corrupts hidden bits</div>
+      </div>
+      <div class="preview-box" id="preview-hide">
+        <img id="preview-img-hide" src="" alt="preview"/>
+        <div class="preview-badge" id="preview-info-hide">✓ IMAGE LOADED</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Step 2 — Secret Message</div>
+      <label class="field-label">Your secret text</label>
+      <textarea id="secret-text" placeholder="Type your secret message here... It will be AES-256 encrypted before being hidden in the image pixels." maxlength="5000" oninput="updateCharCount()"></textarea>
+      <div class="char-count"><span id="char-count">0</span> / 5000 characters</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Step 3 — Encryption Password</div>
+      <label class="field-label">Password (needed to extract later)</label>
+      <div class="pass-wrap">
+        <input type="password" id="pass-hide" class="pass-input" placeholder="Choose a strong password..."/>
+        <button class="toggle-pass" onclick="togglePass('pass-hide')" type="button">👁</button>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progress-hide-wrap">
+      <div class="progress-label" id="progress-hide-label">Processing...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-hide-fill"></div></div>
+    </div>
+
+    <button class="btn btn-hide" id="btn-hide" onclick="doHide()">
+      <div class="spinner" id="spinner-hide"></div>
+      <span id="btn-hide-text">🔏 Hide & Encrypt Secret</span>
+    </button>
+    <div class="result" id="result-hide"></div>
+  </div>
+
+  <!-- EXTRACT PANEL -->
+  <div class="panel" id="panel-extract">
+    <div class="card">
+      <div class="card-title">Step 1 — Stego Image</div>
+      <div class="upload-zone" id="dropzone-extract" ondragover="handleDrag(event,'extract')" ondragleave="handleDragLeave('extract')" ondrop="handleDrop(event,'extract')">
+        <input type="file" id="img-extract" accept="image/png,image/bmp" onchange="previewImage('extract')"/>
+        <span class="upload-icon">🔍</span>
+        <div class="upload-label">Upload the stego image (with hidden data)</div>
+        <div class="upload-sub">The PNG you downloaded after hiding</div>
+      </div>
+      <div class="preview-box" id="preview-extract">
+        <img id="preview-img-extract" src="" alt="preview"/>
+        <div class="preview-badge" id="preview-info-extract">✓ IMAGE LOADED</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Step 2 — Password</div>
+      <label class="field-label">Same password used while hiding</label>
+      <div class="pass-wrap">
+        <input type="password" id="pass-extract" class="pass-input" placeholder="Enter the decryption password..."/>
+        <button class="toggle-pass" onclick="togglePass('pass-extract')" type="button">👁</button>
+      </div>
+    </div>
+
+    <div class="progress-wrap" id="progress-extract-wrap">
+      <div class="progress-label" id="progress-extract-label">Processing...</div>
+      <div class="progress-bar"><div class="progress-fill" id="progress-extract-fill"></div></div>
+    </div>
+
+    <button class="btn btn-extract" id="btn-extract" onclick="doExtract()">
+      <div class="spinner" id="spinner-extract"></div>
+      <span id="btn-extract-text">🔍 Extract & Decrypt Secret</span>
+    </button>
+    <div class="result" id="result-extract"></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  STEGANOGRAPHY ENGINE — Pure JavaScript
+//  AES-256 via CryptoJS + LSB via Canvas API
+// ═══════════════════════════════════════════
+
+const DELIMITER = '<<STEG_END>>';
+
+// AES encrypt/decrypt using CryptoJS
+function aesEncrypt(text, password) {
+  return CryptoJS.AES.encrypt(text, password).toString();
+}
+
+function aesDecrypt(cipher, password) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(cipher, password);
+    const result = bytes.toString(CryptoJS.enc.Utf8);
+    if (!result) throw new Error('bad');
+    return result;
+  } catch(e) {
+    throw new Error('Wrong password or data was tampered!');
+  }
+}
+
+// Convert string to flat bit array
+function strToBits(str) {
+  const bits = [];
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    for (let b = 7; b >= 0; b--) bits.push((c >> b) & 1);
+  }
+  return bits;
+}
+
+// Convert flat bit array back to string
+function bitsToStr(bits) {
+  let str = '';
+  for (let i = 0; i + 7 < bits.length; i += 8) {
+    let byte = 0;
+    for (let b = 0; b < 8; b++) byte = (byte << 1) | bits[i + b];
+    if (byte === 0) break;
+    str += String.fromCharCode(byte);
+  }
+  return str;
+}
+
+// Load image file into canvas and return pixel data
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      resolve({ canvas, ctx, w: img.width, h: img.height });
+    };
+    img.onerror = () => reject(new Error('Could not load image.'));
+    img.src = url;
+  });
+}
+
+function canvasToBlob(canvas) {
+  return new Promise(res => canvas.toBlob(res, 'image/png'));
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ─── HIDE ─────────────────────────────────
+async function doHide() {
+  const imgFile  = document.getElementById('img-hide').files[0];
+  const secret   = document.getElementById('secret-text').value.trim();
+  const password = document.getElementById('pass-hide').value;
+
+  if (!imgFile)  return showResult('result-hide','error','⚠ No Image','Please upload a cover image first.');
+  if (!secret)   return showResult('result-hide','error','⚠ No Secret','Please type your secret message.');
+  if (!password) return showResult('result-hide','error','⚠ No Password','Please enter a password.');
+
+  setLoading('hide', true);
+  hide('result-hide');
+  await sleep(30);
+
+  try {
+    setProgress('hide', 10, 'AES-256 encrypting message...');
+    const encrypted = aesEncrypt(secret, password);
+    const payload   = encrypted + DELIMITER;
+    const bits      = strToBits(payload);
+
+    setProgress('hide', 28, 'Loading image into canvas...');
+    const { canvas, ctx, w, h } = await loadImage(imgFile);
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const px = imgData.data;
+
+    // capacity = pixels * 3 channels (R,G,B — skip Alpha)
+    const cap = w * h * 3;
+    if (bits.length > cap) {
+      const maxC = Math.floor((cap / 8 - 100) / 3);
+      throw new Error(`Message too large for this image. Try a bigger image or shorter text (max ~${maxC} chars).`);
+    }
+
+    setProgress('hide', 45, 'Embedding bits into pixels...');
+    let bi = 0;
+    for (let i = 0; i < px.length && bi < bits.length; i++) {
+      if (i % 4 === 3) continue; // skip alpha
+      px[i] = (px[i] & 0xFE) | bits[bi++];
+    }
+
+    setProgress('hide', 88, 'Writing output image...');
+    ctx.putImageData(imgData, 0, 0);
+    await sleep(20);
+
+    setProgress('hide', 96, 'Generating download...');
+    const blob = await canvasToBlob(canvas);
+    const url  = URL.createObjectURL(blob);
+    const kb   = (blob.size / 1024).toFixed(1);
+
+    setProgress('hide', 100, 'Done!');
+    await sleep(400);
+    hideProgress('hide');
+
+    showResultHTML('result-hide', 'success', `
+      <div class="result-header">✅ Secret Successfully Hidden!</div>
+      <div class="result-body">
+        Your message is AES-256 encrypted and embedded into the image pixels.
+        The output PNG looks <strong>identical</strong> to the original — nobody can tell.
+        <div class="stats">
+          <div class="stat">Message length: <span>${secret.length} chars</span></div>
+          <div class="stat">Bits embedded: <span>${bits.length}</span></div>
+          <div class="stat">Output size: <span>${kb} KB</span></div>
+          <div class="stat">Encryption: <span>AES-256</span></div>
+          <div class="stat">Method: <span>LSB Steganography</span></div>
+        </div>
+        <a class="btn-download" href="${url}" download="stego_output.png">⬇️ Download Stego Image</a>
+      </div>
+    `);
+  } catch(e) {
+    hideProgress('hide');
+    showResult('result-hide','error','❌ Error', e.message);
+  }
+  setLoading('hide', false);
+}
+
+// ─── EXTRACT ──────────────────────────────
+async function doExtract() {
+  const imgFile  = document.getElementById('img-extract').files[0];
+  const password = document.getElementById('pass-extract').value;
+
+  if (!imgFile)  return showResult('result-extract','error','⚠ No Image','Please upload the stego image.');
+  if (!password) return showResult('result-extract','error','⚠ No Password','Please enter the decryption password.');
+
+  setLoading('extract', true);
+  hide('result-extract');
+  await sleep(30);
+
+  try {
+    setProgress('extract', 15, 'Loading image...');
+    const { ctx, w, h } = await loadImage(imgFile);
+    const px = ctx.getImageData(0, 0, w, h).data;
+
+    setProgress('extract', 40, 'Reading pixel LSBs...');
+    await sleep(20);
+    const bits = [];
+    for (let i = 0; i < px.length; i++) {
+      if (i % 4 === 3) continue;
+      bits.push(px[i] & 1);
+    }
+
+    setProgress('extract', 68, 'Reconstructing payload...');
+    await sleep(10);
+    const raw = bitsToStr(bits);
+
+    setProgress('extract', 78, 'Locating hidden data...');
+    const pos = raw.indexOf(DELIMITER);
+    if (pos === -1) throw new Error('No hidden data found. Make sure you uploaded the correct stego image.');
+
+    const encryptedPart = raw.substring(0, pos);
+
+    setProgress('extract', 90, 'Decrypting with AES-256...');
+    await sleep(10);
+    const secretText = aesDecrypt(encryptedPart, password);
+
+    setProgress('extract', 100, 'Done!');
+    await sleep(400);
+    hideProgress('extract');
+
+    showResultHTML('result-extract', 'success', `
+      <div class="result-header">✅ Secret Successfully Extracted!</div>
+      <div class="result-body">
+        Message decrypted and recovered:
+        <div class="stats">
+          <div class="stat">Recovered: <span>${secretText.length} chars</span></div>
+          <div class="stat">Decryption: <span>AES-256 ✓</span></div>
+        </div>
+        <div class="secret-reveal">${escapeHtml(secretText)}</div>
+      </div>
+    `);
+  } catch(e) {
+    hideProgress('extract');
+    showResult('result-extract','error','❌ Failed', e.message);
+  }
+  setLoading('extract', false);
+}
+
+// ═══════════════════════════════════════════
+//  UI HELPERS
+// ═══════════════════════════════════════════
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) =>
+    t.classList.toggle('active', (i===0&&tab==='hide')||(i===1&&tab==='extract')));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
+}
+
+function previewImage(mode) {
+  const file = document.getElementById('img-'+mode).files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('preview-img-'+mode).src = e.target.result;
+    document.getElementById('preview-'+mode).style.display = 'block';
+    document.getElementById('preview-info-'+mode).textContent =
+      `✓ ${file.name} · ${(file.size/1024).toFixed(1)} KB`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleDrag(e, mode) {
+  e.preventDefault();
+  document.getElementById('dropzone-'+mode).classList.add('dragover');
+}
+function handleDragLeave(mode) {
+  document.getElementById('dropzone-'+mode).classList.remove('dragover');
+}
+function handleDrop(e, mode) {
+  e.preventDefault();
+  document.getElementById('dropzone-'+mode).classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  document.getElementById('img-'+mode).files = dt.files;
+  previewImage(mode);
+}
+
+function togglePass(id) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function updateCharCount() {
+  document.getElementById('char-count').textContent =
+    document.getElementById('secret-text').value.length;
+}
+
+function setLoading(mode, on) {
+  document.getElementById('btn-'+mode).disabled = on;
+  document.getElementById('spinner-'+mode).style.display = on ? 'block' : 'none';
+  document.getElementById('btn-'+mode+'-text').textContent = on
+    ? (mode==='hide' ? 'Encrypting & Embedding...' : 'Extracting & Decrypting...')
+    : (mode==='hide' ? '🔏 Hide & Encrypt Secret'  : '🔍 Extract & Decrypt Secret');
+}
+
+function setProgress(mode, pct, label) {
+  document.getElementById('progress-'+mode+'-wrap').style.display = 'block';
+  document.getElementById('progress-'+mode+'-fill').style.width = pct+'%';
+  document.getElementById('progress-'+mode+'-label').textContent = label;
+}
+
+function hideProgress(mode) {
+  document.getElementById('progress-'+mode+'-wrap').style.display = 'none';
+}
+
+function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+function showResult(id, type, header, body) {
+  showResultHTML(id, type, `
+    <div class="result-header">${header}</div>
+    <div class="result-body">${body}</div>
+  `);
+}
+
+function showResultHTML(id, type, html) {
+  const el = document.getElementById(id);
+  el.className = 'result '+type;
+  el.innerHTML = html;
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
