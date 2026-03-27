@@ -1,56 +1,63 @@
-🔐 Stega_Vault
+# 🔐 Stega_Vault
+
 A simple and efficient steganography tool that allows you to hide secret data inside images without visibly altering them.
 
-🔗 Live Demo: https://sushantmanitripathi.github.io/Stega_Vault/
+🔗 **Live Demo:** https://sushantmanitripathi.github.io/Stega_Vault/
 
-📌 Overview
-Stega_Vault is a browser-based tool that enables users to conceal sensitive information inside an image file.
-Unlike encryption (which scrambles data), this tool hides the existence of the message itself.
+---
 
-<img width="1775" height="883" alt="image" src="https://github.com/user-attachments/assets/ea21d174-a807-4b64-9502-39a2e580a948" />
+## 📌 Overview
 
+**Stega_Vault** is a browser-based tool that enables users to conceal sensitive information inside an image file.  
+Unlike encryption (which makes data unreadable), this tool hides the *existence* of the message itself.
 
-🚀 Features
-Hide text inside images
+---
 
-Extract hidden messages from images
+## 🚀 Features
 
-Simple and intuitive UI
+- Hide text inside images  
+- Extract hidden messages from images  
+- Simple and intuitive UI  
+- Runs entirely in the browser (no backend required)  
+- Fast and lightweight  
 
-Runs entirely in the browser (no backend required)
+---
 
-Fast and lightweight
+## 🛠️ Tech Stack
 
-🛠️ Tech Stack
-HTML5
+- HTML5  
+- CSS3  
+- JavaScript  
+- Canvas API  
 
-CSS3
+---
 
-JavaScript
+## 📷 Screenshot
 
-Canvas API
+![App Screenshot](https://github.com/user-attachments/assets/a5318f79-7118-4fa2-9b18-3f5ac54e1993)
 
-📷 Screenshot
+---
 
+## ⚙️ How It Works
 
-⚙️ How It Works
-Upload an image
+### Encoding Process
 
-Enter the secret message
+1. Upload an image  
+2. Enter the secret message  
+3. Encode the message into the image  
+4. Download the modified image  
 
-Encode the message into the image
+### Decoding Process
 
-Download the modified image
+1. Upload the encoded image  
+2. Click decode  
+3. View the hidden message  
 
-To decode:
+---
 
-Upload the encoded image
+## 📦 Installation & Usage
 
-Click decode
-
-View the hidden message
-
-📦 Installation & Usage
+```bash
 # Clone the repository
 git clone https://github.com/sushantmanitripathi/Stega_Vault.git
 
@@ -58,49 +65,3 @@ git clone https://github.com/sushantmanitripathi/Stega_Vault.git
 cd Stega_Vault
 
 # Open index.html in your browser
-🌐 Deployment
-This project is deployed using GitHub Pages.
-
-To deploy your own version:
-
-Push code to GitHub
-
-Go to Settings → Pages
-
-Select branch (main or master)
-
-Save and access your live link
-
-⚠️ Limitations
-Works mainly with image formats supported by Canvas (PNG preferred)
-
-Large messages may distort image quality
-
-Not intended for high-security use cases
-
-📌 Future Improvements
-Support for audio/video steganography
-
-Drag-and-drop interface
-
-Encryption layer before embedding
-
-File size optimization
-
-🤝 Contributing
-Contributions are welcome.
-
-Fork the repo
-
-Create a new branch
-
-Make changes
-
-Submit a pull request
-
-📄 License
-This project is open-source and available under the MIT License.
-
-👤 Author
-Sushant Mani Tripathi
-AI/ML Engineer
